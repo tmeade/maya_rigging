@@ -2,56 +2,61 @@ import maya.cmds as mc
 import maya.OpenMaya as om
 
 
+def create_two_bone_ik(orient_to_world=False):
+    '''
+    Description:
+        Builds an ikHande and control object, and pole vector control given the
+        root joint.
+    Arguments:
+        orient_to_world (Bool): Determines orientation of control. If True, the
+        contorl will be oriented to the joint.
+    '''
+    # Check Selection
+    # if len(mc.sl=1) == 0:
 
-def create_two_bone_ik(orient_to_world = False):
-
-    #Check Selection
-    #if len(mc.sl=1) == 0:
-
-    #Get Joints
+    # Get Joints
     root_joint = mc.ls(sl=1)[0]
     mid_joint = mc.listRelatives(root_joint, c=1)[0]
     end_joint = mc.listRelatives(mid_joint, c=1)[0]
 
-    #TODO: Validate joint orientations
+    # TODO: Validate joint orientations
 
-    #Determine primary orientation axis from end_joint (assumes uniform ornientation based on validation).
+    # Determine primary orientation axis from end_joint (assumes uniform ornientation based on validation).
     translate_values = list(mc.getAttr('{}.translate'.format(end_joint))[0])
-    orientation_vector = [0,0,0]
+    orientation_vector = [0, 0, 0]
     ctrl_radius = 1
     for item, value in enumerate(translate_values):
         if int(value) != 0:
             orientation_vector[item] = 1
             ctrl_radius = value
 
-
-    #Create ik
+    # Create ik
     ik_handle = mc.ikHandle(sj=root_joint, ee=end_joint)[0]
 
-    #Create controls
+    # Create controls
     ik_ctrl = mc.ls(mc.circle(nr=tuple(orientation_vector), r=ctrl_radius/3), uuid=True)[0]
     ctrl_grp = mc.ls(mc.group(em=True), uuid=True)[0]
 
-    #Place controls in local or world
+    # Place controls in local or world
     for item in list([ik_ctrl, ctrl_grp]):
         if orient_to_world == True:
             mc.matchTransform(mc.ls(item)[0], end_joint, pos=True)
         else:
             mc.matchTransform(mc.ls(item)[0], end_joint)
 
-    #Setup Constraint is local
-    #TODO: This is sloppy
+    # Setup Constraint is local
+    # TODO: This is sloppy
     if orient_to_world == False:
         mc.orientConstraint(mc.ls(ik_ctrl)[0], end_joint)
 
-    #create control hierarchy
+    # create control hierarchy
     mc.parent(mc.ls(ik_ctrl)[0], mc.ls(ctrl_grp)[0])
     mc.parent(ik_handle, mc.ls(ik_ctrl)[0])
 
     mc.rename(mc.ls(ik_ctrl)[0], '_ctrl')
     mc.rename(mc.ls(ctrl_grp)[0], '_ctrl_grp')
 
-    ###Get pole vector position
+    ### Get pole vector position
     # Get vectors for postion of each joint
     start_vector = om.MVector(
         mc.xform(root_joint, q=True, ws=True, t=True)[0],
