@@ -1,0 +1,37 @@
+### Get pole vector position
+  # Get vectors for postion of each joint
+  start_vector = om.MVector(
+      mc.xform(root_joint, q=True, ws=True, t=True)[0],
+      mc.xform(root_joint, q=True, ws=True, t=True)[1],
+      mc.xform(root_joint, q=True, ws=True, t=True)[2]
+      )
+  mid_vector = om.MVector(
+      mc.xform(mid_joint, q=True, ws=True, t=True)[0],
+      mc.xform(mid_joint, q=True, ws=True, t=True)[1],
+      mc.xform(mid_joint, q=True, ws=True, t=True)[2]
+      )
+  end_vector = om.MVector(
+      mc.xform(end_joint, q=True, ws=True, t=True)[0],
+      mc.xform(end_joint, q=True, ws=True, t=True)[1],
+      mc.xform(end_joint, q=True, ws=True, t=True)[2]
+      )
+
+  # Calculate vectors
+  start_end = end_vector - start_vector
+  start_mid = mid_vector - start_vector
+
+  dot_product =  start_mid * start_end
+
+  proj = float(dot_product) / float(start_end.length())
+  proj_vector = start_end.normal() * proj
+
+  arrow_vector = start_mid - proj_vector
+
+  # Add resulting vecotr to mid joint
+  final_vector = arrow_vector + mid_vector
+
+  #create pole vector and groups
+  pv_ctrl = mc.ls(mc.spaceLocator(), uuid=True)
+  mc.move(final_vector.x, final_vector.y, final_vector.z)
+  pv_grp = mc.ls(mc.group(em=True), uuid=True)[0]
+  mc.matchTransform(mc.ls(pv_grp)[0], mc.ls(pv_ctrl)[0])
